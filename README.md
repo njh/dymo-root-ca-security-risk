@@ -80,17 +80,17 @@ DYMO.DLS.Printing.Host.app/Contents/Resources/Firefox/libsoftokn3.dylib
 DYMO.DLS.Printing.Host.app/Contents/Resources/Firefox/libssl3.dylib
 ```
 
-The DYMO Installer will also attempt to find local installations of the Firefox browser
-and install the root certificate into its trust store too using the bundled [certutil] tool.
-
-![DYMO Root CA in Firefox](firefox_root_ca.png)
-
 The file `dymo_root.cer` exists as a file within the Resources directory, and it is this
 that is installed into your system's keychain as a Trusted CA.
 
 See [dymo_root_ca.pem](dymo_root_ca.pem) for a PEM encoded version of the same file.
 
-It was created in August 2015 with a lifetime of 24 years:
+The DYMO Installer will also attempt to find local installations of the Firefox browser
+and install the root certificate into its trust store too using the bundled [certutil] tool.
+
+![DYMO Root CA in Firefox](firefox_root_ca.png)
+
+The Dymo Root CA was created in August 2015 with a lifetime of 24 years:
 
 ```
 $ openssl x509 -in dymo_root_ca.pem -text -noout
