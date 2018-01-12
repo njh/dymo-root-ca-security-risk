@@ -16,7 +16,7 @@ be on HTTPS.
 
 There have been cases of this before, for example [EA Origin and Blizzard battle.net],
 where they have managed to get an official Certificate Authority to issue a certificate
-for localhost and the when the certificate was revoked, resorted to creating their own CA,
+for [localhost] and the when the certificate was revoked, resorted to creating their own CA,
 which their installer installs on your systems keychain.
 
 The problem with this is that DYMO is now trusted by your computer to issue certificates 
@@ -286,6 +286,63 @@ Certificate:
 ```
 
 
+How could this be done better?
+------------------------------
+
+DYMO took this approach because their previous approach (native plugin-ins)
+was being deprecated by browser vendors. So if installing their own root CA
+on their customer's computers is such a bad idea, what is the right way of
+doing it?
+
+I asked the question on the [mozilla.dev.security.policy](https://lists.mozilla.org/listinfo/dev-security-policy)
+mailing list:
+
+https://groups.google.com/d/msg/mozilla.dev.security.policy/aE2C7stoHgE/bFIfrqkxAQAJ
+
+Thanks to Peter Gutmann, Hanno Böck, Ryan Sleevi and Jonathan Rudenberg for 
+responding to my email.
+
+
+Largely based on [Ryan's email](https://groups.google.com/d/msg/mozilla.dev.security.policy/aE2C7stoHgE/y1yRHZs5AQAJ),
+this is my summary of the possible approaches to distributing a web browser that runs on localhost:
+
+1. You should just be able to use `http://127.0.0.1/`, even from a page served 
+   over HTTPS. Using an IP address guarantees it is going to your local 
+   computer. Some operating systems will lookup 'localhost' in DNS and return
+   something other than 127.0.0.1. See the [W3C Secure Contexts Specification] 
+   for details. Although it is not clear how many browsers support this yet.
+2. It is fine to generate your own Root CA and localhost certificate, but they
+   should be uniquely generated on the end-users machines. Rather than the same
+   root and private key being distributed to all customers.
+3. Alternatively if you are only using a single localhost certificate, and you
+   have control over the local truststore, you don't need a Root CA at all.
+   Just create a single self-signed certificate on the local machine and 
+   mark it as trusted.
+4. You can use the browser's native messaging APIs. These allow your browser to 
+   communicate with a sperate application running natively on the same computer:
+   * https://docs.microsoft.com/en-us/microsoft-edge/extensions/guides/native-messaging 
+   * https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Native_messaging 
+   * https://developer.chrome.com/apps/nativeMessaging 
+5. You can generate a FQDN and deliver certificates to your users from publicly 
+   trusted CAs (as long as the client generated the local key). There is a blog 
+   post by Filippo Valsorda about [how Plex are doing this](https://blog.filippo.io/how-plex-is-doing-https-for-all-its-users/).
+   The advantage of this approach is that other machines on the local network
+   or Internet could also be allowed to talk to your machine.
+
+You should **not**: 
+1. Generate the leaf key centrally and distribute it to all machines
+2. Generate your own Certificate Authority Root and install it in people's trust stores
+3. Distribute any private key with the application
+
+
+Hanno Böck wrote an article about this very subject in the
+[Bulletproof TLS Newsletter](https://www.feistyduck.com/bulletproof-tls-newsletter/):
+
+https://www.feistyduck.com/bulletproof-tls-newsletter/issue_36_private_keys_in_software
+
+It provides details of several other cases of installing the same certificate
+and private key on customer machines in order for a browser to communicate 
+with localhost.
 
 
 
@@ -293,3 +350,5 @@ Certificate:
 [Mixed Content]:  https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content
 [EA Origin and Blizzard battle.net]:  https://groups.google.com/d/msg/mozilla.dev.security.policy/pk039T_wPrI/tGnFDFTnCQAJ
 [certutil]:   https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/tools/NSS_Tools_certutil
+[localhost]:  https://en.wikipedia.org/wiki/Localhost
+[W3C Secure Contexts Specification]: https://www.w3.org/TR/secure-contexts/#is-origin-trustworthy
